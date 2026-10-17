@@ -1,0 +1,318 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile for customer, driver, or admin",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Unique user ID from Firebase Auth" },
+        "name": { "type": "string", "description": "Full name of the user" },
+        "email": { "type": "string", "description": "User email address" },
+        "phone": { "type": "string", "description": "Contact phone number" },
+        "role": { "type": "string", "enum": ["CUSTOMER", "DRIVER", "ADMIN"], "description": "User role in the system" },
+        "status": { "type": "string", "enum": ["ACTIVE", "SUSPENDED"], "description": "Account status" },
+        "profilePhotoUrl": { "type": "string", "description": "Optional photo URL" },
+        "fcmToken": { "type": "string", "description": "FCM notification token" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation server timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last profile update timestamp" }
+      },
+      "required": ["userId", "name", "email", "role", "status", "createdAt"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Trusted admin registry document providing verified admin privileges",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "Admin email" },
+        "role": { "type": "string", "enum": ["SUPER_ADMIN"], "description": "Admin permission level" },
+        "grantedAt": { "type": "string", "format": "date-time", "description": "When admin role was granted" }
+      },
+      "required": ["email", "role", "grantedAt"]
+    },
+    "DriverProfile": {
+      "title": "DriverProfile",
+      "description": "Driver operational profile, vehicle info, and availability",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Driver auth UID" },
+        "fullName": { "type": "string", "description": "Driver official name" },
+        "phone": { "type": "string", "description": "Driver phone number" },
+        "vehicleType": { "type": "string", "enum": ["MOTORCYCLE", "CAR", "VAN"], "description": "Type of vehicle used" },
+        "plateNumber": { "type": "string", "description": "Vehicle registration plate" },
+        "vehicleModel": { "type": "string", "description": "Make and model of vehicle" },
+        "status": { "type": "string", "enum": ["PENDING_VERIFICATION", "APPROVED", "REJECTED", "SUSPENDED"], "description": "Approval status by Super Admin" },
+        "isOnline": { "type": "boolean", "description": "Driver active duty toggle" },
+        "currentLat": { "type": "number", "description": "Driver current latitude" },
+        "currentLng": { "type": "number", "description": "Driver current longitude" },
+        "rating": { "type": "number", "description": "Average rating score" },
+        "totalTrips": { "type": "integer", "description": "Total completed trips" },
+        "walletBalance": { "type": "number", "description": "Driver earnings wallet balance in IDR" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Registration timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["userId", "fullName", "phone", "vehicleType", "plateNumber", "status", "isOnline", "createdAt"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Registered vehicle details for drivers",
+      "type": "object",
+      "properties": {
+        "driverId": { "type": "string", "description": "Owner driver UID" },
+        "type": { "type": "string", "enum": ["MOTORCYCLE", "CAR", "VAN"], "description": "Vehicle category" },
+        "model": { "type": "string", "description": "Vehicle model" },
+        "plateNumber": { "type": "string", "description": "License plate number" },
+        "color": { "type": "string", "description": "Color of vehicle" },
+        "year": { "type": "string", "description": "Manufacturing year" }
+      },
+      "required": ["driverId", "type", "model", "plateNumber"]
+    },
+    "ServiceArea": {
+      "title": "ServiceArea",
+      "description": "Geographical operational service area",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Area name" },
+        "city": { "type": "string", "description": "City or regency name" },
+        "isActive": { "type": "boolean", "description": "Whether service is available" },
+        "baseFareBike": { "type": "number", "description": "Base fare for bike" },
+        "baseFareCar": { "type": "number", "description": "Base fare for car" }
+      },
+      "required": ["name", "city", "isActive"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Ride hailing, delivery, or food order",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string", "description": "Customer UID who booked" },
+        "customerName": { "type": "string", "description": "Customer display name" },
+        "customerPhone": { "type": "string", "description": "Customer contact number (private to assigned driver)" },
+        "driverId": { "type": "string", "description": "Assigned driver UID" },
+        "driverName": { "type": "string", "description": "Driver name" },
+        "driverPhone": { "type": "string", "description": "Driver phone number (private to customer)" },
+        "driverPlateNumber": { "type": "string", "description": "Driver vehicle plate number" },
+        "serviceType": { "type": "string", "enum": ["GO_RIDE", "GO_CAR", "GO_SEND", "GO_FOOD"], "description": "Service booked" },
+        "status": { "type": "string", "enum": ["SEARCHING", "ACCEPTED", "PICKING_UP", "ARRIVED", "ON_THE_WAY", "COMPLETED", "CANCELLED"], "description": "Order progression status" },
+        "pickupAddress": { "type": "string", "description": "Pickup location name" },
+        "pickupLat": { "type": "number", "description": "Pickup latitude" },
+        "pickupLng": { "type": "number", "description": "Pickup longitude" },
+        "dropoffAddress": { "type": "string", "description": "Destination location name" },
+        "dropoffLat": { "type": "number", "description": "Dropoff latitude" },
+        "dropoffLng": { "type": "number", "description": "Dropoff longitude" },
+        "fare": { "type": "number", "description": "Total trip fare in IDR" },
+        "distanceKm": { "type": "number", "description": "Estimated trip distance in kilometers" },
+        "paymentMethod": { "type": "string", "enum": ["CASH", "WALLET"], "description": "Payment method" },
+        "paymentStatus": { "type": "string", "enum": ["PENDING", "PAID"], "description": "Payment status" },
+        "itemType": { "type": "string", "description": "Type of package or goods (for GO_SEND)" },
+        "itemDescription": { "type": "string", "description": "Package contents description" },
+        "recipientName": { "type": "string", "description": "Package recipient name" },
+        "recipientPhone": { "type": "string", "description": "Package recipient contact number" },
+        "merchantId": { "type": "string", "description": "Culinary merchant ID (for GO_FOOD)" },
+        "merchantName": { "type": "string", "description": "Culinary restaurant name" },
+        "foodItemsSummary": { "type": "string", "description": "Summary of ordered food items" },
+        "tripNotes": { "type": "string", "description": "Driver pickup/delivery notes" },
+        "cancelledBy": { "type": "string", "description": "Who initiated cancellation (CUSTOMER or DRIVER)" },
+        "cancelReason": { "type": "string", "description": "Reason for trip cancellation" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Order placement timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last status change timestamp" }
+      },
+      "required": ["customerId", "customerName", "serviceType", "status", "pickupAddress", "dropoffAddress", "fare", "distanceKm", "paymentMethod", "paymentStatus", "createdAt"]
+    },
+    "Merchant": {
+      "title": "Merchant",
+      "description": "Culinary restaurant merchant profile for GoFood",
+      "type": "object",
+      "properties": {
+        "ownerUserId": { "type": "string", "description": "Owner UID" },
+        "name": { "type": "string", "description": "Restaurant / stall name" },
+        "address": { "type": "string", "description": "Outlet address" },
+        "phone": { "type": "string", "description": "Contact phone" },
+        "category": { "type": "string", "description": "Food category" },
+        "isOpen": { "type": "boolean", "description": "Open status" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"], "description": "Verification status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Registration timestamp" }
+      },
+      "required": ["ownerUserId", "name", "address", "phone", "category", "isOpen", "status", "createdAt"]
+    },
+    "PricingSetting": {
+      "title": "PricingSetting",
+      "description": "Pricing tariffs configured by Super Admin",
+      "type": "object",
+      "properties": {
+        "serviceType": { "type": "string", "enum": ["GO_RIDE", "GO_CAR", "GO_SEND", "GO_FOOD"], "description": "Service type" },
+        "baseFare": { "type": "number", "description": "Base booking fare in IDR" },
+        "perKmRate": { "type": "number", "description": "Rate per km in IDR" },
+        "minimumFare": { "type": "number", "description": "Minimum fare in IDR" },
+        "platformFeePercent": { "type": "number", "description": "Platform commission percentage" },
+        "isActive": { "type": "boolean", "description": "Whether active" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last updated" }
+      },
+      "required": ["serviceType", "baseFare", "perKmRate", "minimumFare", "platformFeePercent", "isActive"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial wallet and payment transaction record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "User or driver UID" },
+        "orderId": { "type": "string", "description": "Related order ID" },
+        "type": { "type": "string", "enum": ["TOPUP", "FARE_PAYMENT", "COMMISSION_DEDUCTION", "WITHDRAWAL"], "description": "Transaction category" },
+        "amount": { "type": "number", "description": "Monetary amount in IDR" },
+        "status": { "type": "string", "enum": ["SUCCESS", "PENDING", "FAILED"], "description": "Transaction outcome" },
+        "description": { "type": "string", "description": "Readable description" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Transaction timestamp" }
+      },
+      "required": ["userId", "type", "amount", "status", "createdAt"]
+    },
+    "CommissionLedger": {
+      "title": "CommissionLedger",
+      "description": "Audit record of platform commissions on trips",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string", "description": "Order ID" },
+        "driverId": { "type": "string", "description": "Driver UID" },
+        "grossFare": { "type": "number", "description": "Gross fare paid by customer" },
+        "platformCommission": { "type": "number", "description": "Platform cut" },
+        "driverNet": { "type": "number", "description": "Net driver earnings" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Ledger creation timestamp" }
+      },
+      "required": ["orderId", "driverId", "grossFare", "platformCommission", "driverNet", "createdAt"]
+    },
+    "DriverSubmission": {
+      "title": "DriverSubmission",
+      "description": "Driver application and verification documents submitted for admin approval",
+      "type": "object",
+      "properties": {
+        "driverId": { "type": "string", "description": "Driver candidate UID" },
+        "driverName": { "type": "string", "description": "Driver name" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "ktpNumber": { "type": "string", "description": "National ID number (NIK)" },
+        "simNumber": { "type": "string", "description": "Driver License number (SIM)" },
+        "vehicleType": { "type": "string", "enum": ["MOTORCYCLE", "CAR", "VAN"], "description": "Vehicle type" },
+        "plateNumber": { "type": "string", "description": "Vehicle plate number" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"], "description": "Review status" },
+        "rejectionReason": { "type": "string", "description": "Reason if rejected" },
+        "submittedAt": { "type": "string", "format": "date-time", "description": "Submission timestamp" },
+        "reviewedAt": { "type": "string", "format": "date-time", "description": "Review timestamp" },
+        "reviewedBy": { "type": "string", "description": "Admin UID who reviewed" }
+      },
+      "required": ["driverId", "driverName", "phone", "ktpNumber", "simNumber", "vehicleType", "plateNumber", "status", "submittedAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app alerts and notifications",
+      "type": "object",
+      "properties": {
+        "recipientUserId": { "type": "string", "description": "Target user UID" },
+        "title": { "type": "string", "description": "Notification title" },
+        "body": { "type": "string", "description": "Notification message" },
+        "type": { "type": "string", "description": "Category or event type" },
+        "isRead": { "type": "boolean", "description": "Read status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Sent timestamp" }
+      },
+      "required": ["recipientUserId", "title", "body", "type", "isRead", "createdAt"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Customer or driver support issue ticket",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Ticket creator UID" },
+        "orderId": { "type": "string", "description": "Optional order reference" },
+        "category": { "type": "string", "description": "Ticket issue category" },
+        "message": { "type": "string", "description": "Issue details message" },
+        "status": { "type": "string", "enum": ["OPEN", "IN_PROGRESS", "RESOLVED"], "description": "Ticket lifecycle" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Opened timestamp" }
+      },
+      "required": ["userId", "category", "message", "status", "createdAt"]
+    },
+    "AppSetting": {
+      "title": "AppSetting",
+      "description": "Global application configuration",
+      "type": "object",
+      "properties": {
+        "maintenanceMode": { "type": "boolean", "description": "Maintenance switch" },
+        "minDriverAppVersion": { "type": "integer", "description": "Minimum required driver app version code" },
+        "emergencyContact": { "type": "string", "description": "Emergency call center" },
+        "contactPhone": { "type": "string", "description": "Customer support phone" }
+      },
+      "required": ["maintenanceMode"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Admin operational audit trail",
+      "type": "object",
+      "properties": {
+        "adminUid": { "type": "string", "description": "Admin who performed action" },
+        "action": { "type": "string", "description": "Action performed" },
+        "targetResource": { "type": "string", "description": "Resource type modified" },
+        "targetId": { "type": "string", "description": "Document ID affected" },
+        "details": { "type": "string", "description": "Action metadata" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Audit event time" }
+      },
+      "required": ["adminUid", "action", "targetResource", "targetId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles. Owned by userId or managed by Admins."
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Trusted admin registry. Only accessible by existing admins or verified bootstrap."
+    },
+    "/driver_profiles/{driverId}": {
+      "schema": { "$ref": "#/entities/DriverProfile" },
+      "description": "Driver operational profiles. Managed by driver owner or Super Admin."
+    },
+    "/vehicles/{vehicleId}": {
+      "schema": { "$ref": "#/entities/Vehicle" },
+      "description": "Driver vehicles. Readable by users, managed by owner driver or Admin."
+    },
+    "/merchants/{merchantId}": {
+      "schema": { "$ref": "#/entities/Merchant" },
+      "description": "Culinary merchant restaurants for GoFood. Publicly readable, writeable by merchant owner."
+    },
+    "/service_areas/{areaId}": {
+      "schema": { "$ref": "#/entities/ServiceArea" },
+      "description": "Operational service areas. Publicly readable, writeable only by Admin."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Trips and delivery orders. Read/write scoped to customer, assigned driver, or Admin."
+    },
+    "/pricing_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/PricingSetting" },
+      "description": "Pricing tariffs. Publicly readable, writeable only by Admin."
+    },
+    "/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Financial wallet and payment transaction record. Readable by owner user or Admin."
+    },
+    "/commission_ledger/{ledgerId}": {
+      "schema": { "$ref": "#/entities/CommissionLedger" },
+      "description": "Platform commission records. Readable by assigned driver or Admin."
+    },
+    "/driver_submissions/{submissionId}": {
+      "schema": { "$ref": "#/entities/DriverSubmission" },
+      "description": "Driver registration verification documents. Readable by applicant driver or Admin."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "User in-app notifications. Scoped to recipient user."
+    },
+    "/support_tickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/SupportTicket" },
+      "description": "User support tickets. Scoped to author user or Admin."
+    },
+    "/app_settings/{configId}": {
+      "schema": { "$ref": "#/entities/AppSetting" },
+      "description": "Global application configuration. Publicly readable, editable by Admin."
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Administrative audit trail. Admin only."
+    }
+  }
+}
