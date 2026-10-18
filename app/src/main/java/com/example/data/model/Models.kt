@@ -10,6 +10,7 @@ data class User(
     @DocumentId val id: String = "",
     val userId: String = "",
     val name: String = "",
+    val username: String = "",
     val email: String = "",
     val phone: String = "",
     val role: String = "CUSTOMER", // CUSTOMER, DRIVER, ADMIN

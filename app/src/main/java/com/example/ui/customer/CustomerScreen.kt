@@ -99,7 +99,10 @@ import com.example.data.repository.OrderRepository
 import com.example.ui.common.AppConfirmationDialog
 import com.example.ui.common.EmptyStateCard
 import com.example.ui.common.ErrorBanner
+import com.example.ui.common.RatingReviewDialog
+import com.example.ui.common.RouteMapPreview
 import com.example.ui.common.ServiceBadge
+import com.example.ui.common.ServiceSelectionCard
 import com.example.ui.common.StatusBadge
 import com.example.ui.common.formatRupiah
 import com.example.ui.theme.AccentAmber
@@ -992,7 +995,7 @@ fun CustomerScreen(
             RatingReviewDialog(
                 driverName = orderToRate.driverName.ifBlank { "Mitra Driver" },
                 onDismiss = { ratingTargetOrder = null },
-                onSubmit = { stars, review ->
+                onSubmit = { stars: Double, review: String ->
                     val oId = orderToRate.id
                     val dId = orderToRate.driverId
                     ratingTargetOrder = null

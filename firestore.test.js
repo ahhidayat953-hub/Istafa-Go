@@ -230,3 +230,123 @@ test("Non-admin: cannot write to audit_logs or app_settings", async () => {
     })
   );
 });
+
+// 6. Complete Trip Progression, Cancellation & Rating
+test("Driver: can progress order from ACCEPTED to PICKING_UP, ARRIVED, ON_THE_WAY, and COMPLETED", async () => {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await context.firestore().collection("orders").doc("order_trip").set({
+      customerId: CUSTOMER_UID,
+      customerName: "Budi Santoso",
+      driverId: DRIVER_UID,
+      driverName: "Agus Driver",
+      serviceType: "GO_RIDE",
+      status: "ACCEPTED",
+      pickupAddress: "Jl. Sudirman",
+      dropoffAddress: "Mall Istafa",
+      fare: 20000,
+      distanceKm: 5.0,
+      paymentMethod: "CASH",
+      paymentStatus: "PENDING",
+      createdAt: new Date(),
+    });
+  });
+
+  const driverDb = testEnv.authenticatedContext(DRIVER_UID).firestore();
+  await assertSucceeds(
+    driverDb.collection("orders").doc("order_trip").update({
+      status: "PICKING_UP",
+      updatedAt: new Date(),
+    })
+  );
+
+  await assertSucceeds(
+    driverDb.collection("orders").doc("order_trip").update({
+      status: "ARRIVED",
+      updatedAt: new Date(),
+    })
+  );
+
+  await assertSucceeds(
+    driverDb.collection("orders").doc("order_trip").update({
+      status: "ON_THE_WAY",
+      updatedAt: new Date(),
+    })
+  );
+
+  await assertSucceeds(
+    driverDb.collection("orders").doc("order_trip").update({
+      status: "COMPLETED",
+      paymentStatus: "PAID",
+      updatedAt: new Date(),
+    })
+  );
+});
+
+test("Customer: can rate completed order with stars and review", async () => {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await context.firestore().collection("orders").doc("order_to_rate").set({
+      customerId: CUSTOMER_UID,
+      customerName: "Budi Santoso",
+      driverId: DRIVER_UID,
+      driverName: "Agus Driver",
+      serviceType: "GO_RIDE",
+      status: "COMPLETED",
+      pickupAddress: "Jl. Sudirman",
+      dropoffAddress: "Mall Istafa",
+      fare: 20000,
+      distanceKm: 5.0,
+      paymentMethod: "CASH",
+      paymentStatus: "PAID",
+      createdAt: new Date(),
+    });
+  });
+
+  const customerDb = testEnv.authenticatedContext(CUSTOMER_UID).firestore();
+  await assertSucceeds(
+    customerDb.collection("orders").doc("order_to_rate").update({
+      rating: 5.0,
+      review: "Pelayanan sangat ramah dan cepat!",
+      updatedAt: new Date(),
+    })
+  );
+});
+
+test("Stranger: cannot rate an order they did not book", async () => {
+  const strangerDb = testEnv.authenticatedContext(STRANGER_UID).firestore();
+  await assertFails(
+    strangerDb.collection("orders").doc("order_to_rate").update({
+      rating: 1.0,
+      review: "Spam review",
+      updatedAt: new Date(),
+    })
+  );
+});
+
+test("Customer: can cancel a SEARCHING order with reason", async () => {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await context.firestore().collection("orders").doc("order_cancel").set({
+      customerId: CUSTOMER_UID,
+      customerName: "Budi Santoso",
+      serviceType: "GO_RIDE",
+      status: "SEARCHING",
+      pickupAddress: "Jl. Sudirman",
+      dropoffAddress: "Mall Istafa",
+      fare: 15000,
+      distanceKm: 4.2,
+      paymentMethod: "CASH",
+      paymentStatus: "PENDING",
+      createdAt: new Date(),
+    });
+  });
+
+  const customerDb = testEnv.authenticatedContext(CUSTOMER_UID).firestore();
+  await assertSucceeds(
+    customerDb.collection("orders").doc("order_cancel").update({
+      status: "CANCELLED",
+      cancelledBy: "CUSTOMER",
+      cancelReason: "Salah memasukkan alamat jemput",
+      updatedAt: new Date(),
+    })
+  );
+});
+

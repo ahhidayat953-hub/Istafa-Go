@@ -28,7 +28,8 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        (('email' in request.auth.token) && request.auth.token.email == 'ahhidayat953@gmail.com' && ('email_verified' in request.auth.token) && request.auth.token.email_verified == true)
+        (('email' in request.auth.token) && request.auth.token.email == 'ahhidayat953@gmail.com' && ('email_verified' in request.auth.token) && request.auth.token.email_verified == true) ||
+        (('email' in request.auth.token) && (request.auth.token.email == 'admin@istafago.id' || request.auth.token.email == 'superadmin@istafago.id'))
       );
     }
 
@@ -41,6 +42,7 @@ service cloud.firestore {
       return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
              data.email is string && data.email.size() <= 150 &&
+             (!('username' in data) || data.username == null || (data.username is string && data.username.size() <= 50)) &&
              (!('phone' in data) || data.phone == null || (data.phone is string && data.phone.size() <= 30)) &&
              data.role in ['CUSTOMER', 'DRIVER', 'ADMIN'] &&
              data.status in ['ACTIVE', 'SUSPENDED'] &&
@@ -98,6 +100,8 @@ service cloud.firestore {
              (!('tripNotes' in data) || data.tripNotes == null || (data.tripNotes is string && data.tripNotes.size() <= 500)) &&
              (!('cancelledBy' in data) || data.cancelledBy == null || (data.cancelledBy is string && data.cancelledBy.size() <= 50)) &&
              (!('cancelReason' in data) || data.cancelReason == null || (data.cancelReason is string && data.cancelReason.size() <= 500)) &&
+             (!('rating' in data) || data.rating is number) &&
+             (!('review' in data) || data.review == null || (data.review is string && data.review.size() <= 1000)) &&
              data.createdAt is timestamp && data.createdAt <= request.time &&
              (!('updatedAt' in data) || data.updatedAt == null || (data.updatedAt is timestamp && data.updatedAt <= request.time));
     }
@@ -197,7 +201,7 @@ service cloud.firestore {
           incoming().createdAt == existing().createdAt &&
           incoming().role == existing().role && // Prevent role privilege escalation
           isValidUser(incoming()) &&
-          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'profilePhotoUrl', 'fcmToken', 'updatedAt'])
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'username', 'profilePhotoUrl', 'fcmToken', 'updatedAt'])
         )
       );
 
@@ -222,12 +226,12 @@ service cloud.firestore {
 
       allow update: if isSignedIn() && (
         isAdmin() || (
-          request.auth.uid == driverId &&
+          (request.auth.uid == driverId || exists(/databases/$(database)/documents/orders/$(request.resource.data.userId))) &&
           incoming().userId == existing().userId &&
           incoming().createdAt == existing().createdAt &&
           incoming().status == existing().status && // Only admin can approve/reject/suspend status
           isValidDriverProfile(incoming()) &&
-          incoming().diff(existing()).affectedKeys().hasOnly(['isOnline', 'currentLat', 'currentLng', 'updatedAt'])
+          incoming().diff(existing()).affectedKeys().hasOnly(['isOnline', 'currentLat', 'currentLng', 'walletBalance', 'totalTrips', 'rating', 'updatedAt'])
         )
       );
 
@@ -306,6 +310,14 @@ service cloud.firestore {
           incoming().fare == existing().fare &&
           incoming().status in ['PICKING_UP', 'ARRIVED', 'ON_THE_WAY', 'COMPLETED', 'CANCELLED'] &&
           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'paymentStatus', 'cancelledBy', 'cancelReason', 'updatedAt'])
+        ) ||
+        // Customer can rate completed order
+        (
+          existing().customerId == request.auth.uid &&
+          incoming().customerId == existing().customerId &&
+          existing().status == 'COMPLETED' &&
+          incoming().status == existing().status &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'review', 'updatedAt'])
         )
       );
 

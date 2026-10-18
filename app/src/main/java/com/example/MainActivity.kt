@@ -105,6 +105,7 @@ fun IstafaGoAppRoot() {
     if (user == null) {
         // Unauthenticated Gate
         AuthScreen(
+            authRepository = authRepository,
             onAuthSuccess = { preferredRole ->
                 currentRoleOverride = preferredRole
             }
@@ -133,7 +134,11 @@ fun IstafaGoAppRoot() {
             }
         } else {
             val activeProfile = userProfile!!
-            val activeRole = currentRoleOverride ?: activeProfile.role
+            val activeRole = when {
+                isSuperAdminVerified && (currentRoleOverride == "ADMIN" || currentRoleOverride == null) -> "ADMIN"
+                isSuperAdminVerified && currentRoleOverride != null -> currentRoleOverride!!
+                else -> activeProfile.role
+            }
 
             val handleSignOut: () -> Unit = {
                 scope.launch {
@@ -160,7 +165,7 @@ fun IstafaGoAppRoot() {
                         driverRepository = driverRepository,
                         orderRepository = orderRepository,
                         onSignOut = handleSignOut,
-                        onSwitchToRole = { targetRole -> currentRoleOverride = targetRole }
+                        onSwitchToRole = if (isSuperAdminVerified) { targetRole -> currentRoleOverride = targetRole } else null
                     )
                 }
                 else -> {
@@ -168,7 +173,7 @@ fun IstafaGoAppRoot() {
                         user = activeProfile,
                         orderRepository = orderRepository,
                         onSignOut = handleSignOut,
-                        onSwitchToRole = { targetRole -> currentRoleOverride = targetRole }
+                        onSwitchToRole = if (isSuperAdminVerified) { targetRole -> currentRoleOverride = targetRole } else null
                     )
                 }
             }
